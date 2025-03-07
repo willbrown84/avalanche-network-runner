@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
 	"io/fs"
 	"net/netip"
 	"os"
@@ -30,7 +31,6 @@ import (
 	"github.com/ava-labs/avalanchego/network/peer"
 	"github.com/ava-labs/avalanchego/staking"
 	"github.com/ava-labs/avalanchego/utils/beacon"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
@@ -680,7 +680,7 @@ func (ln *localNetwork) addNode(nodeConfig node.Config) (node.Node, error) {
 				return nil, err
 			}
 		} else {
-			key, err := bls.NewSigner()
+			key, err := localsigner.New()
 			if err != nil {
 				return nil, fmt.Errorf("couldn't generate new signing key: %w", err)
 			}

@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
+
 	"github.com/ava-labs/avalanchego/upgrade"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/formatting"
 	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
 	coreth_params "github.com/ava-labs/coreth/params"
@@ -72,11 +73,14 @@ func GenerateGenesis(
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get node ID: %w", err)
 		}
-		blsSk, err := bls.SecretKeyFromBytes(keys.BlsKey)
+		blsSk, err := localsigner.FromBytes(keys.BlsKey)
 		if err != nil {
 			return nil, err
 		}
-		p := signer.NewProofOfPossession(blsSk)
+		p, err := signer.NewProofOfPossession(blsSk)
+		if err != nil {
+			return nil, err
+		}
 		pk, err := formatting.Encode(formatting.HexNC, p.PublicKey[:])
 		if err != nil {
 			return nil, err

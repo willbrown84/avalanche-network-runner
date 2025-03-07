@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
+
 	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
 
 	"github.com/ava-labs/avalanchego/vms/avm"
@@ -31,7 +33,6 @@ import (
 	"github.com/ava-labs/avalanchego/config"
 	"github.com/ava-labs/avalanchego/genesis"
 	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/set"
@@ -968,11 +969,14 @@ func (ln *localNetwork) addPrimaryValidators(
 		if err != nil {
 			return err
 		}
-		blsSk, err := bls.SecretKeyFromBytes(blsKeyBytes)
+		blsSk, err := localsigner.FromBytes(blsKeyBytes)
 		if err != nil {
 			return err
 		}
-		proofOfPossession := signer.NewProofOfPossession(blsSk)
+		proofOfPossession, err := signer.NewProofOfPossession(blsSk)
+		if err != nil {
+			return err
+		}
 		cctx, cancel = createDefaultCtx(ctx)
 		tx, err := w.pWallet.IssueAddPermissionlessValidatorTx(
 			&txs.SubnetValidator{
