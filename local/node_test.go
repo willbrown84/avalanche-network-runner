@@ -6,12 +6,13 @@ import (
 	"crypto"
 	"crypto/tls"
 	"encoding/binary"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
 	"io"
 	"net"
 	"net/netip"
 	"testing"
 	"time"
+
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
 
 	"github.com/ava-labs/avalanche-network-runner/network/node"
 	"github.com/ava-labs/avalanchego/ids"
