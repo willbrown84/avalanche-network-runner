@@ -6,6 +6,7 @@ import (
 	"crypto"
 	"crypto/tls"
 	"encoding/binary"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
 	"io"
 	"net"
 	"net/netip"
@@ -19,7 +20,6 @@ import (
 	"github.com/ava-labs/avalanchego/staking"
 	"github.com/ava-labs/avalanchego/upgrade"
 	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/ips"
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
@@ -81,7 +81,7 @@ func verifyProtocol(
 		Timestamp: now,
 	}
 	signer := myTLSCert.PrivateKey.(crypto.Signer)
-	bls0, err := bls.NewSigner()
+	bls0, err := localsigner.New()
 	if err != nil {
 		errCh <- err
 		return
