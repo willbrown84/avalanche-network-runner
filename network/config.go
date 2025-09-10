@@ -132,7 +132,13 @@ func NewAvalancheGoGenesis(
 				},
 			},
 		},
-		StartTime:                  uint64(time.Now().Unix()),
+		StartTime: func() uint64 {
+			now := time.Now().Unix()
+			if now < 0 {
+				return 0 // Handle negative timestamps
+			}
+			return uint64(now)
+		}(),
 		InitialStakedFunds:         []string{genesisVdrStakeAddr},
 		InitialStakeDuration:       31_536_000, // 1 year
 		InitialStakeDurationOffset: 5_400,      // 90 minutes
@@ -149,8 +155,14 @@ func NewAvalancheGoGenesis(
 				InitialAmount: xChainBal.Balance.Uint64(),
 				UnlockSchedule: []genesis.LockedAmount{
 					{
-						Amount:   validatorStake * uint64(len(genesisVdrs)), // Stake
-						Locktime: uint64(time.Now().Add(7 * 24 * time.Hour).Unix()),
+						Amount: validatorStake * uint64(len(genesisVdrs)), // Stake
+						Locktime: func() uint64 {
+							lockTime := time.Now().Add(7 * 24 * time.Hour).Unix()
+							if lockTime < 0 {
+								return 0 // Handle negative timestamps
+							}
+							return uint64(lockTime)
+						}(),
 					},
 				},
 			},

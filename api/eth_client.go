@@ -6,10 +6,11 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/ava-labs/coreth/core/types"
 	"github.com/ava-labs/coreth/ethclient"
 	"github.com/ava-labs/coreth/interfaces"
-	"github.com/ethereum/go-ethereum/common"
+	ethereum "github.com/ava-labs/libevm"
+	"github.com/ava-labs/libevm/common"
+	"github.com/ava-labs/libevm/core/types"
 )
 
 // Interface compliance
@@ -23,18 +24,18 @@ type EthClient interface {
 	BlockByNumber(context.Context, *big.Int) (*types.Block, error)
 	BlockByHash(context.Context, common.Hash) (*types.Block, error)
 	BlockNumber(context.Context) (uint64, error)
-	CallContract(context.Context, interfaces.CallMsg, *big.Int) ([]byte, error)
+	CallContract(context.Context, ethereum.CallMsg, *big.Int) ([]byte, error)
 	NonceAt(context.Context, common.Address, *big.Int) (uint64, error)
 	SuggestGasPrice(context.Context) (*big.Int, error)
 	AcceptedCodeAt(context.Context, common.Address) ([]byte, error)
 	AcceptedNonceAt(context.Context, common.Address) (uint64, error)
 	CodeAt(context.Context, common.Address, *big.Int) ([]byte, error)
-	EstimateGas(context.Context, interfaces.CallMsg) (uint64, error)
-	AcceptedCallContract(context.Context, interfaces.CallMsg) ([]byte, error)
+	EstimateGas(context.Context, ethereum.CallMsg) (uint64, error)
+	AcceptedCallContract(context.Context, ethereum.CallMsg) ([]byte, error)
 	HeaderByNumber(context.Context, *big.Int) (*types.Header, error)
 	SuggestGasTipCap(context.Context) (*big.Int, error)
-	FilterLogs(context.Context, interfaces.FilterQuery) ([]types.Log, error)
-	SubscribeFilterLogs(context.Context, interfaces.FilterQuery, chan<- types.Log) (interfaces.Subscription, error)
+	FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error)
+	SubscribeFilterLogs(context.Context, ethereum.FilterQuery, chan<- types.Log) (interfaces.Subscription, error)
 }
 
 // ethClient websocket ethclient.Client with mutexed api calls and lazy conn (on first call)
@@ -43,7 +44,7 @@ type ethClient struct {
 	ipAddr  string
 	chainID string
 	port    uint
-	client  ethclient.Client
+	client  *ethclient.Client
 	lock    sync.Mutex
 }
 
@@ -67,7 +68,7 @@ func NewEthClientWithChainID(ipAddr string, port uint, chainID string) EthClient
 
 // connect attempts to connect with websocket ethclient API
 func (c *ethClient) connect() error {
-	if c.client == ethclient.Client(nil) {
+	if c.client == nil {
 		client, err := ethclient.Dial(fmt.Sprintf("ws://%s:%d/ext/bc/%s/ws", c.ipAddr, c.port, c.chainID))
 		if err != nil {
 			return err
@@ -79,7 +80,7 @@ func (c *ethClient) connect() error {
 
 // Close closes opened connection (if any)
 func (c *ethClient) Close() {
-	if c.client == ethclient.Client(nil) {
+	if c.client == nil {
 		return
 	}
 	c.lock.Lock()
@@ -141,7 +142,7 @@ func (c *ethClient) BlockNumber(ctx context.Context) (uint64, error) {
 	return c.client.BlockNumber(ctx)
 }
 
-func (c *ethClient) CallContract(ctx context.Context, msg interfaces.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (c *ethClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if err := c.connect(); err != nil {
@@ -195,7 +196,7 @@ func (c *ethClient) CodeAt(ctx context.Context, account common.Address, blockNum
 	return c.client.CodeAt(ctx, account, blockNumber)
 }
 
-func (c *ethClient) EstimateGas(ctx context.Context, msg interfaces.CallMsg) (uint64, error) {
+func (c *ethClient) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if err := c.connect(); err != nil {
@@ -204,7 +205,7 @@ func (c *ethClient) EstimateGas(ctx context.Context, msg interfaces.CallMsg) (ui
 	return c.client.EstimateGas(ctx, msg)
 }
 
-func (c *ethClient) AcceptedCallContract(ctx context.Context, call interfaces.CallMsg) ([]byte, error) {
+func (c *ethClient) AcceptedCallContract(ctx context.Context, call ethereum.CallMsg) ([]byte, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if err := c.connect(); err != nil {
@@ -231,7 +232,7 @@ func (c *ethClient) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
 	return c.client.SuggestGasTipCap(ctx)
 }
 
-func (c *ethClient) FilterLogs(ctx context.Context, query interfaces.FilterQuery) ([]types.Log, error) {
+func (c *ethClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if err := c.connect(); err != nil {
@@ -240,7 +241,7 @@ func (c *ethClient) FilterLogs(ctx context.Context, query interfaces.FilterQuery
 	return c.client.FilterLogs(ctx, query)
 }
 
-func (c *ethClient) SubscribeFilterLogs(ctx context.Context, query interfaces.FilterQuery, ch chan<- types.Log) (interfaces.Subscription, error) {
+func (c *ethClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (interfaces.Subscription, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if err := c.connect(); err != nil {

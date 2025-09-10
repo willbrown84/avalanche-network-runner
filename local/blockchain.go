@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -377,7 +378,11 @@ func (ln *localNetwork) installCustomChains(
 	}
 
 	// create missing subnets
-	subnetIDs, err := createSubnets(ctx, uint32(len(subnetSpecs)), w, ln.log)
+	numSubnets := len(subnetSpecs)
+	if numSubnets > int(math.MaxUint32) {
+		return nil, fmt.Errorf("too many subnet specs: %d, maximum allowed: %d", numSubnets, math.MaxUint32)
+	}
+	subnetIDs, err := createSubnets(ctx, uint32(numSubnets), w, ln.log)
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +612,11 @@ func (ln *localNetwork) installSubnets(
 		return nil, err
 	}
 
-	subnetIDs, err := createSubnets(ctx, uint32(len(subnetSpecs)), w, ln.log)
+	numSubnets := len(subnetSpecs)
+	if numSubnets > int(math.MaxUint32) {
+		return nil, fmt.Errorf("too many subnet specs: %d, maximum allowed: %d", numSubnets, math.MaxUint32)
+	}
+	subnetIDs, err := createSubnets(ctx, uint32(numSubnets), w, ln.log)
 	if err != nil {
 		return nil, err
 	}
@@ -916,7 +925,7 @@ func newWallet(
 	var w wallet
 	w.addr = privateKey.PublicKey().Address()
 	w.pCTX = pCTX
-	w.pBackend = pwallet.NewBackend(pCTX, pUTXOs, subnetOwners)
+	w.pBackend = pwallet.NewBackend(pUTXOs, subnetOwners)
 	w.pBuilder = pbuilder.New(kc.Addresses(), pCTX, w.pBackend)
 	w.pSigner = psigner.New(kc, w.pBackend)
 	w.pWallet = pwallet.New(p.NewClient(pClient, w.pBackend), w.pBuilder, w.pSigner)
@@ -982,9 +991,21 @@ func (ln *localNetwork) addPrimaryValidators(
 			&txs.SubnetValidator{
 				Validator: txs.Validator{
 					NodeID: nodeID,
-					Start:  uint64(time.Now().Add(validationStartOffset).Unix()),
-					End:    uint64(time.Now().Add(validationDuration).Unix()),
-					Wght:   ln.getMinValidatorWeight(),
+					Start: func() uint64 {
+						startTime := time.Now().Add(validationStartOffset).Unix()
+						if startTime < 0 {
+							return 0
+						}
+						return uint64(startTime)
+					}(),
+					End: func() uint64 {
+						endTime := time.Now().Add(validationDuration).Unix()
+						if endTime < 0 {
+							return 0
+						}
+						return uint64(endTime)
+					}(),
+					Wght: ln.getMinValidatorWeight(),
 				},
 				Subnet: ids.Empty,
 			},
@@ -1198,7 +1219,12 @@ func (ln *localNetwork) addPermissionlessDelegators(
 	}
 	primaryValidatorsEndtime := make(map[ids.NodeID]time.Time)
 	for _, v := range vs {
-		primaryValidatorsEndtime[v.NodeID] = time.Unix(int64(v.EndTime), 0)
+		endTime := v.EndTime
+		if endTime > uint64(math.MaxInt64) { // max int64
+			primaryValidatorsEndtime[v.NodeID] = time.Unix(math.MaxInt64, 0) // max valid time
+		} else {
+			primaryValidatorsEndtime[v.NodeID] = time.Unix(int64(endTime), 0)
+		}
 	}
 
 	for _, delegatorSpec := range delegatorSpecs {
@@ -1216,15 +1242,35 @@ func (ln *localNetwork) addPermissionlessDelegators(
 		var startTime uint64
 		var endTime uint64
 		if delegatorSpec.StartTime.IsZero() {
-			startTime = uint64(time.Now().Add(permissionlessValidationStartOffset).Unix())
+			startUnix := time.Now().Add(permissionlessValidationStartOffset).Unix()
+			if startUnix < 0 {
+				startTime = 0
+			} else {
+				startTime = uint64(startUnix)
+			}
 		} else {
-			startTime = uint64(delegatorSpec.StartTime.Unix())
+			startUnix := delegatorSpec.StartTime.Unix()
+			if startUnix < 0 {
+				startTime = 0
+			} else {
+				startTime = uint64(startUnix)
+			}
 		}
 
 		if delegatorSpec.StakeDuration == 0 {
-			endTime = uint64(primaryValidatorsEndtime[validatorNodeID].Unix())
+			endUnix := primaryValidatorsEndtime[validatorNodeID].Unix()
+			if endUnix < 0 {
+				endTime = 0
+			} else {
+				endTime = uint64(endUnix)
+			}
 		} else {
-			endTime = uint64(delegatorSpec.StartTime.Add(delegatorSpec.StakeDuration).Unix())
+			endUnix := delegatorSpec.StartTime.Add(delegatorSpec.StakeDuration).Unix()
+			if endUnix < 0 {
+				endTime = 0
+			} else {
+				endTime = uint64(endUnix)
+			}
 		}
 		tx, err := w.pWallet.IssueAddPermissionlessDelegatorTx(
 			&txs.SubnetValidator{
@@ -1327,7 +1373,12 @@ func (ln *localNetwork) addPermissionlessValidators(
 	}
 	primaryValidatorsEndtime := make(map[ids.NodeID]time.Time)
 	for _, v := range vs {
-		primaryValidatorsEndtime[v.NodeID] = time.Unix(int64(v.EndTime), 0)
+		endTime := v.EndTime
+		if endTime > uint64(math.MaxInt64) { // max int64
+			primaryValidatorsEndtime[v.NodeID] = time.Unix(math.MaxInt64, 0) // max valid time
+		} else {
+			primaryValidatorsEndtime[v.NodeID] = time.Unix(int64(endTime), 0)
+		}
 	}
 
 	for _, validatorSpec := range validatorSpecs {
@@ -1345,15 +1396,35 @@ func (ln *localNetwork) addPermissionlessValidators(
 		var startTime uint64
 		var endTime uint64
 		if validatorSpec.StartTime.IsZero() {
-			startTime = uint64(time.Now().Add(permissionlessValidationStartOffset).Unix())
+			startUnix := time.Now().Add(permissionlessValidationStartOffset).Unix()
+			if startUnix < 0 {
+				startTime = 0
+			} else {
+				startTime = uint64(startUnix)
+			}
 		} else {
-			startTime = uint64(validatorSpec.StartTime.Unix())
+			startUnix := validatorSpec.StartTime.Unix()
+			if startUnix < 0 {
+				startTime = 0
+			} else {
+				startTime = uint64(startUnix)
+			}
 		}
 
 		if validatorSpec.StakeDuration == 0 {
-			endTime = uint64(primaryValidatorsEndtime[validatorNodeID].Unix())
+			endUnix := primaryValidatorsEndtime[validatorNodeID].Unix()
+			if endUnix < 0 {
+				endTime = 0
+			} else {
+				endTime = uint64(endUnix)
+			}
 		} else {
-			endTime = uint64(validatorSpec.StartTime.Add(validatorSpec.StakeDuration).Unix())
+			endUnix := validatorSpec.StartTime.Add(validatorSpec.StakeDuration).Unix()
+			if endUnix < 0 {
+				endTime = 0
+			} else {
+				endTime = uint64(endUnix)
+			}
 		}
 		tx, err := w.pWallet.IssueAddPermissionlessValidatorTx(
 			&txs.SubnetValidator{
@@ -1529,7 +1600,12 @@ func (ln *localNetwork) issueSubnetValidatorTxs(
 		}
 		primaryValidatorsEndtime := make(map[ids.NodeID]time.Time)
 		for _, v := range vs {
-			primaryValidatorsEndtime[v.NodeID] = time.Unix(int64(v.EndTime), 0)
+			endTime := v.EndTime
+			if endTime > uint64(math.MaxInt64) { // max int64
+				primaryValidatorsEndtime[v.NodeID] = time.Unix(math.MaxInt64, 0) // max valid time
+			} else {
+				primaryValidatorsEndtime[v.NodeID] = time.Unix(int64(endTime), 0)
+			}
 		}
 		cctx, cancel = createDefaultCtx(ctx)
 		vs, err = platformCli.GetCurrentValidators(cctx, subnetID, nil)
@@ -1557,9 +1633,21 @@ func (ln *localNetwork) issueSubnetValidatorTxs(
 					Validator: txs.Validator{
 						NodeID: nodeID,
 						// reasonable delay in most/slow test environments
-						Start: uint64(time.Now().Add(validationStartOffset).Unix()),
-						End:   uint64(primaryValidatorsEndtime[nodeID].Unix()),
-						Wght:  subnetValidatorsWeight,
+						Start: func() uint64 {
+							startUnix := time.Now().Add(validationStartOffset).Unix()
+							if startUnix < 0 {
+								return 0
+							}
+							return uint64(startUnix)
+						}(),
+						End: func() uint64 {
+							endUnix := primaryValidatorsEndtime[nodeID].Unix()
+							if endUnix < 0 {
+								return 0
+							}
+							return uint64(endUnix)
+						}(),
+						Wght: subnetValidatorsWeight,
 					},
 					Subnet: subnetID,
 				},

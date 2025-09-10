@@ -274,7 +274,7 @@ func (lc *localNetwork) Start(ctx context.Context) error {
 		return err
 	}
 
-	ux.Print(lc.log, logging.Blue.Wrap(logging.Bold.Wrap("create and run local network")))
+	ux.Print(lc.log, "%s", logging.Blue.Wrap(logging.Bold.Wrap("create and run local network")))
 	nw, err := local.NewNetwork(
 		lc.log,
 		lc.cfg,
@@ -351,7 +351,7 @@ func (lc *localNetwork) AddPermissionlessDelegators(ctx context.Context, delegat
 	defer lc.lock.Unlock()
 
 	if len(delegatorSpecs) == 0 {
-		ux.Print(lc.log, logging.Orange.Wrap(logging.Bold.Wrap("no delegator specs provided...")))
+		ux.Print(lc.log, "%s", logging.Orange.Wrap(logging.Bold.Wrap("no delegator specs provided...")))
 		return nil
 	}
 
@@ -381,7 +381,7 @@ func (lc *localNetwork) AddPermissionlessDelegators(ctx context.Context, delegat
 		return err
 	}
 
-	ux.Print(lc.log, logging.Green.Wrap(logging.Bold.Wrap("finished adding permissionless delegators")))
+	ux.Print(lc.log, "%s", logging.Green.Wrap(logging.Bold.Wrap("finished adding permissionless delegators")))
 	return nil
 }
 
@@ -390,7 +390,7 @@ func (lc *localNetwork) AddPermissionlessValidators(ctx context.Context, validat
 	defer lc.lock.Unlock()
 
 	if len(validatorSpecs) == 0 {
-		ux.Print(lc.log, logging.Orange.Wrap(logging.Bold.Wrap("no validator specs provided...")))
+		ux.Print(lc.log, "%s", logging.Orange.Wrap(logging.Bold.Wrap("no validator specs provided...")))
 		return nil
 	}
 
@@ -420,7 +420,7 @@ func (lc *localNetwork) AddPermissionlessValidators(ctx context.Context, validat
 		return err
 	}
 
-	ux.Print(lc.log, logging.Green.Wrap(logging.Bold.Wrap("finished adding permissionless validators")))
+	ux.Print(lc.log, "%s", logging.Green.Wrap(logging.Bold.Wrap("finished adding permissionless validators")))
 	return nil
 }
 
@@ -429,7 +429,7 @@ func (lc *localNetwork) AddSubnetValidators(ctx context.Context, validatorSpecs 
 	defer lc.lock.Unlock()
 
 	if len(validatorSpecs) == 0 {
-		ux.Print(lc.log, logging.Orange.Wrap(logging.Bold.Wrap("no validator specs provided...")))
+		ux.Print(lc.log, "%s", logging.Orange.Wrap(logging.Bold.Wrap("no validator specs provided...")))
 		return nil
 	}
 
@@ -459,7 +459,7 @@ func (lc *localNetwork) AddSubnetValidators(ctx context.Context, validatorSpecs 
 		return err
 	}
 
-	ux.Print(lc.log, logging.Green.Wrap(logging.Bold.Wrap("finished adding subnet validators")))
+	ux.Print(lc.log, "%s", logging.Green.Wrap(logging.Bold.Wrap("finished adding subnet validators")))
 	return nil
 }
 
@@ -468,7 +468,7 @@ func (lc *localNetwork) RemoveSubnetValidator(ctx context.Context, validatorSpec
 	defer lc.lock.Unlock()
 
 	if len(validatorSpecs) == 0 {
-		ux.Print(lc.log, logging.Orange.Wrap(logging.Bold.Wrap("no validator specs provided...")))
+		ux.Print(lc.log, "%s", logging.Orange.Wrap(logging.Bold.Wrap("no validator specs provided...")))
 		return nil
 	}
 
@@ -498,7 +498,7 @@ func (lc *localNetwork) RemoveSubnetValidator(ctx context.Context, validatorSpec
 		return err
 	}
 
-	ux.Print(lc.log, logging.Green.Wrap(logging.Bold.Wrap("finished removing subnet validators")))
+	ux.Print(lc.log, "%s", logging.Green.Wrap(logging.Bold.Wrap("finished removing subnet validators")))
 	return nil
 }
 
@@ -507,7 +507,7 @@ func (lc *localNetwork) TransformSubnets(ctx context.Context, elasticSubnetSpecs
 	defer lc.lock.Unlock()
 
 	if len(elasticSubnetSpecs) == 0 {
-		ux.Print(lc.log, logging.Orange.Wrap(logging.Bold.Wrap("no subnets specified...")))
+		ux.Print(lc.log, "%s", logging.Orange.Wrap(logging.Bold.Wrap("no subnets specified...")))
 		return nil, nil, nil
 	}
 
@@ -537,7 +537,7 @@ func (lc *localNetwork) TransformSubnets(ctx context.Context, elasticSubnetSpecs
 		return nil, nil, err
 	}
 
-	ux.Print(lc.log, logging.Green.Wrap(logging.Bold.Wrap("finished transforming subnets")))
+	ux.Print(lc.log, "%s", logging.Green.Wrap(logging.Bold.Wrap("finished transforming subnets")))
 	return chainIDs, assetIDs, nil
 }
 
@@ -548,7 +548,7 @@ func (lc *localNetwork) CreateSubnets(ctx context.Context, subnetSpecs []network
 	defer lc.lock.Unlock()
 
 	if len(subnetSpecs) == 0 {
-		ux.Print(lc.log, logging.Orange.Wrap(logging.Bold.Wrap("no subnets specified...")))
+		ux.Print(lc.log, "%s", logging.Orange.Wrap(logging.Bold.Wrap("no subnets specified...")))
 		return nil, nil
 	}
 
@@ -578,7 +578,7 @@ func (lc *localNetwork) CreateSubnets(ctx context.Context, subnetSpecs []network
 		return nil, err
 	}
 
-	ux.Print(lc.log, logging.Green.Wrap(logging.Bold.Wrap("finished adding subnets")))
+	ux.Print(lc.log, "%s", logging.Green.Wrap(logging.Bold.Wrap("finished adding subnets")))
 	return subnetIDs, nil
 }
 
@@ -592,7 +592,7 @@ func (lc *localNetwork) LoadSnapshot(
 	lc.lock.Lock()
 	defer lc.lock.Unlock()
 
-	ux.Print(lc.log, logging.Blue.Wrap(logging.Bold.Wrap("create and run local network from snapshot")))
+	ux.Print(lc.log, "%s", logging.Blue.Wrap(logging.Bold.Wrap("create and run local network from snapshot")))
 
 	var globalNodeConfig map[string]interface{}
 	if lc.options.globalNodeConfig != "" {
@@ -765,7 +765,7 @@ func (lc *localNetwork) AwaitHealthyAndUpdateNetworkInfo(ctx context.Context) er
 // Updates node and subnet info.
 // Assumes [lc.lock] is held.
 func (lc *localNetwork) awaitHealthyAndUpdateNetworkInfo(ctx context.Context) error {
-	ux.Print(lc.log, logging.Blue.Wrap(logging.Bold.Wrap("waiting for all nodes to report healthy...")))
+	ux.Print(lc.log, "%s", logging.Blue.Wrap(logging.Bold.Wrap("waiting for all nodes to report healthy...")))
 
 	if err := lc.nw.Healthy(ctx); err != nil {
 		return err
@@ -880,7 +880,7 @@ func (lc *localNetwork) Stop(ctx context.Context) {
 			if err != nil {
 				msg += fmt.Sprintf(" (error %v)", err)
 			}
-			ux.Print(lc.log, logging.Red.Wrap(msg))
+			ux.Print(lc.log, "%s", logging.Red.Wrap(msg))
 		}
 	})
 }

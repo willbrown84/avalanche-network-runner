@@ -852,7 +852,6 @@ func (ln *localNetwork) healthy(ctx context.Context) error {
 			// no health check for paused nodes
 			continue
 		}
-		node := node
 		nodeName := node.GetName()
 		errGr.Go(func() error {
 			// Every [healthCheckFreq], query node for health status.

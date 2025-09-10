@@ -6,7 +6,9 @@ import (
 	"crypto"
 	"crypto/tls"
 	"encoding/binary"
+	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/netip"
 	"testing"
@@ -22,7 +24,6 @@ import (
 	"github.com/ava-labs/avalanchego/upgrade"
 	"github.com/ava-labs/avalanchego/utils/constants"
 	"github.com/ava-labs/avalanchego/utils/ips"
-	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
 	"github.com/ava-labs/avalanchego/version"
 	"github.com/prometheus/client_golang/prometheus"
@@ -76,7 +77,13 @@ func verifyProtocol(
 		netip.IPv6Loopback(),
 		1,
 	)
-	now := uint64(time.Now().Unix())
+	nowUnix := time.Now().Unix()
+	var now uint64
+	if nowUnix < 0 {
+		now = 0
+	} else {
+		now = uint64(nowUnix)
+	}
 	unsignedIP := peer.UnsignedIP{
 		AddrPort:  myIP,
 		Timestamp: now,
@@ -102,9 +109,27 @@ func verifyProtocol(
 		now,
 		myIP,
 		myVersion.Name,
-		uint32(myVersion.Major),
-		uint32(myVersion.Minor),
-		uint32(myVersion.Patch),
+		func() uint32 {
+			majorVersion := myVersion.Major
+			if majorVersion < 0 || majorVersion > math.MaxUint32 {
+				return 0 // fallback for invalid version
+			}
+			return uint32(majorVersion)
+		}(),
+		func() uint32 {
+			minorVersion := myVersion.Minor
+			if minorVersion < 0 || minorVersion > math.MaxUint32 {
+				return 0 // fallback for invalid version
+			}
+			return uint32(minorVersion)
+		}(),
+		func() uint32 {
+			patchVersion := myVersion.Patch
+			if patchVersion < 0 || patchVersion > math.MaxUint32 {
+				return 0 // fallback for invalid version
+			}
+			return uint32(patchVersion)
+		}(),
 		now,
 		signedIP.TLSSignature,
 		signedIP.BLSSignatureBytes,
@@ -182,7 +207,13 @@ func sendMessage(nodeConn net.Conn, msgBytes []byte, errCh chan error) error {
 	lenBuf := bytes.NewBuffer(msgLenBytes)
 
 	// write the message length
-	binary.BigEndian.PutUint32(msgLenBytes, uint32(len(msgBytes)))
+	msgLen := len(msgBytes)
+	if msgLen > math.MaxUint32 { // max uint32
+		err := fmt.Errorf("message too large: %d bytes", msgLen)
+		errCh <- err
+		return err
+	}
+	binary.BigEndian.PutUint32(msgLenBytes, uint32(msgLen))
 	// send the message length
 	if _, err := io.CopyN(nodeConn, lenBuf, wrappers.IntLen); err != nil {
 		errCh <- err
@@ -224,7 +255,6 @@ func TestAttachPeer(t *testing.T) {
 
 	// For message creation and parsing
 	mc, err := message.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,

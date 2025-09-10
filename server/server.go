@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/netip"
@@ -253,7 +254,11 @@ func (s *server) Run(rootCtx context.Context) (err error) {
 
 func (s *server) Ping(context.Context, *rpcpb.PingRequest) (*rpcpb.PingResponse, error) {
 	s.log.Debug("received ping request")
-	return &rpcpb.PingResponse{Pid: int32(os.Getpid())}, nil
+	pid := os.Getpid()
+	if pid > math.MaxInt32 || pid < math.MinInt32 { // int32 range
+		return &rpcpb.PingResponse{Pid: 0}, nil // fallback to 0 for invalid PID
+	}
+	return &rpcpb.PingResponse{Pid: int32(pid)}, nil
 }
 
 func (s *server) RPCVersion(context.Context, *rpcpb.RPCVersionRequest) (*rpcpb.RPCVersionResponse, error) {
@@ -300,10 +305,16 @@ func (s *server) Start(callContext context.Context, req *rpcpb.StartRequest) (*r
 	}
 
 	var (
-		numNodes          = req.GetNumNodes()
-		trackSubnets      = req.GetWhitelistedSubnets()
-		rootDataDir       = req.GetRootDataDir()
-		pid               = int32(os.Getpid())
+		numNodes     = req.GetNumNodes()
+		trackSubnets = req.GetWhitelistedSubnets()
+		rootDataDir  = req.GetRootDataDir()
+		pid          = func() int32 {
+			p := os.Getpid()
+			if p > math.MaxInt32 || p < math.MinInt32 { // int32 range
+				return 0 // fallback to 0 for invalid PID
+			}
+			return int32(p)
+		}()
 		globalNodeConfig  = req.GetGlobalNodeConfig()
 		customNodeConfigs = req.GetCustomNodeConfigs()
 		err               error
@@ -324,7 +335,11 @@ func (s *server) Start(callContext context.Context, req *rpcpb.StartRequest) (*r
 
 	if len(customNodeConfigs) > 0 {
 		s.log.Warn("custom node configs have been provided; ignoring the 'number-of-nodes' parameter and setting it to:", zap.Int("number-of-nodes", len(customNodeConfigs)))
-		numNodes = uint32(len(customNodeConfigs))
+		configCount := len(customNodeConfigs)
+		if configCount > int(math.MaxUint32) {
+			return nil, fmt.Errorf("too many custom node configs: %d, maximum allowed: %d", configCount, math.MaxUint32)
+		}
+		numNodes = uint32(configCount)
 	}
 
 	s.clusterInfo = &rpcpb.ClusterInfo{
@@ -863,7 +878,11 @@ func (s *server) CreateSubnets(
 		return nil, ErrNotBootstrapped
 	}
 
-	s.log.Debug("CreateSubnets", zap.Uint32("num-subnets", uint32(len(req.GetSubnetSpecs()))))
+	subnetCount := len(req.GetSubnetSpecs())
+	if subnetCount > int(math.MaxUint32) {
+		return nil, fmt.Errorf("too many subnet specs: %d, maximum allowed: %d", subnetCount, math.MaxUint32)
+	}
+	s.log.Debug("CreateSubnets", zap.Uint32("num-subnets", uint32(subnetCount)))
 
 	subnetSpecs := []network.SubnetSpec{}
 	for _, spec := range req.GetSubnetSpecs() {
@@ -1394,7 +1413,11 @@ func (s *server) LoadSnapshot(
 		}
 	}
 
-	pid := int32(os.Getpid())
+	pidRaw := os.Getpid()
+	if pidRaw > math.MaxInt32 || pidRaw < math.MinInt32 { // int32 range
+		return nil, fmt.Errorf("process ID %d out of int32 range", pidRaw)
+	}
+	pid := int32(pidRaw)
 	s.log.Info("starting", zap.Int32("pid", pid), zap.String("root-data-dir", req.GetRootDataDir()))
 
 	s.network, err = newLocalNetwork(localNetworkOptions{
@@ -1621,8 +1644,27 @@ func isClientCanceled(ctxErr error, err error) bool {
 func getNetworkElasticSubnetSpec(
 	spec *rpcpb.ElasticSubnetSpec,
 ) network.ElasticSubnetSpec {
-	minStakeDuration := time.Duration(spec.MinStakeDuration) * time.Hour
-	maxStakeDuration := time.Duration(spec.MaxStakeDuration) * time.Hour
+	// Check for overflow when converting uint64 to int64 for time.Duration
+	minStakeDuration := func() time.Duration {
+		durationHours := spec.MinStakeDuration
+		var safeDuration int64
+		if durationHours > math.MaxInt64 {
+			safeDuration = math.MaxInt64
+		} else {
+			safeDuration = int64(durationHours)
+		}
+		return time.Duration(safeDuration) * time.Hour
+	}()
+	maxStakeDuration := func() time.Duration {
+		durationHours := spec.MaxStakeDuration
+		var safeDuration int64
+		if durationHours > math.MaxInt64 {
+			safeDuration = math.MaxInt64
+		} else {
+			safeDuration = int64(durationHours)
+		}
+		return time.Duration(safeDuration) * time.Hour
+	}()
 
 	elasticSubnetSpec := network.ElasticSubnetSpec{
 		SubnetID:                 &spec.SubnetId,
@@ -1659,7 +1701,16 @@ func getPermissionlessValidatorSpec(
 		}
 	}
 
-	stakeDuration := time.Duration(spec.StakeDuration) * time.Hour
+	stakeDuration := func() time.Duration {
+		durationHours := spec.StakeDuration
+		var safeDuration int64
+		if durationHours > math.MaxInt64 {
+			safeDuration = math.MaxInt64
+		} else {
+			safeDuration = int64(durationHours)
+		}
+		return time.Duration(safeDuration) * time.Hour
+	}()
 
 	validatorSpec := network.PermissionlessStakerSpec{
 		SubnetID:      spec.SubnetId,

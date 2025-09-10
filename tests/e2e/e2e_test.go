@@ -158,13 +158,13 @@ var _ = ginkgo.BeforeSuite(func() {
 })
 
 var _ = ginkgo.AfterSuite(func() {
-	ux.Print(log, logging.Red.Wrap("shutting down cluster"))
+	ux.Print(log, "%s", logging.Red.Wrap("shutting down cluster"))
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	_, err := cli.Stop(ctx)
 	cancel()
 	gomega.Ω(err).Should(gomega.BeNil())
 
-	ux.Print(log, logging.Red.Wrap("shutting down client"))
+	ux.Print(log, "%s", logging.Red.Wrap("shutting down client"))
 	err = cli.Close()
 	gomega.Ω(err).Should(gomega.BeNil())
 })
@@ -194,7 +194,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 		})
 
 		ginkgo.By("can create a blockchain with a new subnet id", func() {
-			ux.Print(log, logging.Blue.Wrap("can create a blockchain in a new subnet"))
+			ux.Print(log, "%s", logging.Blue.Wrap("can create a blockchain in a new subnet"))
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 			resp, err := cli.CreateBlockchains(ctx,
 				[]*rpcpb.BlockchainSpec{
@@ -234,7 +234,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 		})
 
 		ginkgo.By("can create a blockchain with an existing subnet id", func() {
-			ux.Print(log, logging.Blue.Wrap("can create a blockchain in an existing subnet"))
+			ux.Print(log, "%s", logging.Blue.Wrap("can create a blockchain in an existing subnet"))
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 			resp, err := cli.CreateBlockchains(ctx,
 				[]*rpcpb.BlockchainSpec{
@@ -274,7 +274,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 		})
 
 		ginkgo.By("can create a blockchain with an existing subnet id loaded from snapshot", func() {
-			ux.Print(log, logging.Blue.Wrap("can create a blockchain in an existing subnet"))
+			ux.Print(log, "%s", logging.Blue.Wrap("can create a blockchain in an existing subnet"))
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 			_, err := cli.CreateBlockchains(ctx,
 				[]*rpcpb.BlockchainSpec{
@@ -290,7 +290,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 		})
 
 		ginkgo.By("can create a blockchain with new subnet id with some of existing participating nodes", func() {
-			ux.Print(log, logging.Blue.Wrap("can create a blockchain with new subnet id with some of existing participating nodes"))
+			ux.Print(log, "%s", logging.Blue.Wrap("can create a blockchain with new subnet id with some of existing participating nodes"))
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 			resp, err := cli.CreateBlockchains(ctx,
 				[]*rpcpb.BlockchainSpec{
@@ -322,7 +322,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 		})
 
 		ginkgo.By("can create a blockchain with new subnet id with some of existing participating nodes and a new node", func() {
-			ux.Print(log, logging.Blue.Wrap("can create a blockchain new subnet id with some of existing participating nodes and a new node"))
+			ux.Print(log, "%s", logging.Blue.Wrap("can create a blockchain new subnet id with some of existing participating nodes and a new node"))
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 			resp, err := cli.CreateBlockchains(ctx,
 				[]*rpcpb.BlockchainSpec{
@@ -596,7 +596,6 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 			ux.Print(log, logging.Green.Wrap("successfully attached peer, peers: %+v"), v.Peers)
 
 			mc, err := message.NewCreator(
-				logging.NoLog{},
 				prometheus.NewRegistry(),
 				avago_constants.DefaultNetworkCompressionType,
 				10*time.Second,
@@ -636,19 +635,19 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 			cancel()
 			gomega.Ω(err.Error()).Should(gomega.ContainSubstring("repeated node name"))
 			gomega.Ω(resp).Should(gomega.BeNil())
-			ux.Print(log, logging.Green.Wrap("'add-node' failed as expected"))
+			ux.Print(log, "%s", logging.Green.Wrap("'add-node' failed as expected"))
 		})
 	})
 
 	ginkgo.It("can start with custom config", func() {
 		ginkgo.By("stopping network first", func() {
-			ux.Print(log, logging.Red.Wrap("shutting down cluster"))
+			ux.Print(log, "%s", logging.Red.Wrap("shutting down cluster"))
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			_, err := cli.Stop(ctx)
 			cancel()
 			gomega.Ω(err).Should(gomega.BeNil())
 
-			ux.Print(log, logging.Red.Wrap("shutting down client"))
+			ux.Print(log, "%s", logging.Red.Wrap("shutting down client"))
 			gomega.Ω(err).Should(gomega.BeNil())
 		})
 		ginkgo.By("calling start API with custom config", func() {
@@ -678,7 +677,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 			gomega.Ω(uris).Should(gomega.HaveLen(len(customNodeConfigs)))
 			ux.Print(log, logging.Green.Wrap("expected number of nodes up: %d"), len(customNodeConfigs))
 
-			ux.Print(log, logging.Green.Wrap("checking correct admin APIs are enabled resp. disabled"))
+			ux.Print(log, "%s", logging.Green.Wrap("checking correct admin APIs are enabled resp. disabled"))
 			// we have 7 nodes, 3 have the admin API enabled, the other 4 disabled
 			// therefore we expect exactly 4 calls to fail and exactly 3 to succeed.
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -717,7 +716,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 	})
 	ginkgo.It("can pause a node", func() {
 		ginkgo.By("calling PauseNode", func() {
-			ux.Print(log, logging.Green.Wrap("calling 'pause-node'"))
+			ux.Print(log, "%s", logging.Green.Wrap("calling 'pause-node'"))
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			resp, err := cli.PauseNode(ctx, pausedNodeName)
 			cancel()
@@ -859,7 +858,7 @@ var _ = ginkgo.Describe("[Start/Remove/Restart/Add/Stop]", func() {
 			cancel()
 			gomega.Ω(err.Error()).Should(gomega.ContainSubstring("repeated node name"))
 			gomega.Ω(resp).Should(gomega.BeNil())
-			ux.Print(log, logging.Green.Wrap("'add-node' failed as expected"))
+			ux.Print(log, "%s", logging.Green.Wrap("'add-node' failed as expected"))
 		})
 		ginkgo.By("verify the newer subnet also has correct participants", func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
