@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"net"
 	"os"
@@ -29,7 +30,11 @@ func getFreePort() (uint16, error) {
 	if err != nil {
 		return 0, err
 	}
-	port := uint16(l.Addr().(*net.TCPAddr).Port)
+	tcpPort := l.Addr().(*net.TCPAddr).Port
+	if tcpPort < 0 || tcpPort > math.MaxUint16 {
+		return 0, fmt.Errorf("invalid port number: %d", tcpPort)
+	}
+	port := uint16(tcpPort)
 	_ = l.Close()
 	return port, nil
 }
@@ -209,8 +214,14 @@ func getPort(
 	if portIntf, ok := flags[portKey]; ok {
 		switch gotPort := portIntf.(type) {
 		case int:
+			if gotPort < 0 || gotPort > math.MaxUint16 {
+				return 0, fmt.Errorf("invalid port number: %d", gotPort)
+			}
 			port = uint16(gotPort)
 		case float64:
+			if gotPort < 0 || gotPort > math.MaxUint16 {
+				return 0, fmt.Errorf("invalid port number: %g", gotPort)
+			}
 			port = uint16(gotPort)
 		default:
 			return 0, fmt.Errorf("expected flag %q to be int/float64 but got %T", portKey, portIntf)

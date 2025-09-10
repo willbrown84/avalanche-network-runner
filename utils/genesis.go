@@ -5,13 +5,17 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ava-labs/avalanchego/upgrade"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	avago_constants "github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
 	"github.com/ava-labs/avalanchego/utils/formatting"
 	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
-	coreth_params "github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/subnet-evm/params"
+	"github.com/ava-labs/subnet-evm/params/extras"
+	subnetevmutils "github.com/ava-labs/subnet-evm/utils"
 )
 
 const (
@@ -26,9 +30,29 @@ const (
 )
 
 func generateCchainGenesis() ([]byte, error) {
+	chainConfig := &params.ChainConfig{
+		ChainID:             big.NewInt(43112),
+		HomesteadBlock:      big.NewInt(0),
+		DAOForkBlock:        big.NewInt(0),
+		DAOForkSupport:      true,
+		EIP150Block:         big.NewInt(0),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		MuirGlacierBlock:    big.NewInt(0),
+	}
+	agoUpgrade := upgrade.GetConfig(avago_constants.LocalID)
+	params.GetExtra(chainConfig).NetworkUpgrades = extras.NetworkUpgrades{
+		SubnetEVMTimestamp: subnetevmutils.NewUint64(0),
+		DurangoTimestamp:   subnetevmutils.TimeToNewUint64(agoUpgrade.DurangoTime),
+		EtnaTimestamp:      subnetevmutils.TimeToNewUint64(agoUpgrade.EtnaTime),
+		FortunaTimestamp:   nil, // Fortuna is optional and has no effect on Subnet-EVM
+		GraniteTimestamp:   nil, // Granite is optional and has no effect on Subnet-EVM
+	}
 	cChainGenesisMap := map[string]interface{}{}
-	chainConfig := *coreth_params.TestChainConfig
-	chainConfig.ChainID = coreth_params.AvalancheLocalChainID
 	cChainGenesisMap["config"] = chainConfig
 	cChainGenesisMap["timestamp"] = upgrade.InitiallyActiveTime.Unix()
 	cChainGenesisMap["nonce"] = hexa0Str
@@ -72,11 +96,14 @@ func GenerateGenesis(
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get node ID: %w", err)
 		}
-		blsSk, err := bls.SecretKeyFromBytes(keys.BlsKey)
+		blsSk, err := localsigner.FromBytes(keys.BlsKey)
 		if err != nil {
 			return nil, err
 		}
-		p := signer.NewProofOfPossession(blsSk)
+		p, err := signer.NewProofOfPossession(blsSk)
+		if err != nil {
+			return nil, err
+		}
 		pk, err := formatting.Encode(formatting.HexNC, p.PublicKey[:])
 		if err != nil {
 			return nil, err

@@ -141,14 +141,14 @@ func VerifySubnetHasCorrectParticipants(
 				}
 			}
 			if !nodeIsInList {
-				ux.Print(log, logging.Red.Wrap(fmt.Sprintf("VerifySubnetHasCorrectParticipants: %#v", cluster)))
-				ux.Print(log, logging.Red.Wrap(fmt.Sprintf("VerifySubnetHasCorrectParticipants: node not in list subnet %q node %q %v %v", subnetID, node, subnetParticipants, participatingNodeNames)))
+				ux.Print(log, "%s", logging.Red.Wrap(fmt.Sprintf("VerifySubnetHasCorrectParticipants: %#v", cluster)))
+				ux.Print(log, "%s", logging.Red.Wrap(fmt.Sprintf("VerifySubnetHasCorrectParticipants: node not in list subnet %q node %q %v %v", subnetID, node, subnetParticipants, participatingNodeNames)))
 				return false
 			}
 		}
 		return true
 	} else {
-		ux.Print(log, logging.Red.Wrap("VerifySubnetHasCorrectParticipants: cluster is nil"))
+		ux.Print(log, "%s", logging.Red.Wrap("VerifySubnetHasCorrectParticipants: cluster is nil"))
 	}
 	return false
 }

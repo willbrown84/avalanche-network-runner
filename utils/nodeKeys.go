@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
+
 	"github.com/ava-labs/avalanchego/staking"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -35,7 +36,7 @@ func generateNodeKeys() (*NodeKeys, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate staking cert/key: %w", err)
 	}
-	key, err := bls.NewSigner()
+	key, err := localsigner.New()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate new signing key: %w", err)
 	}

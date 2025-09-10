@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"sync"
@@ -188,7 +189,12 @@ func (p *nodeProcess) Stop(ctx context.Context) int {
 	select {
 	case <-ctx.Done():
 		p.log.Warn("context cancelled while waiting for node to stop", zap.String("node", p.name))
-		killDescendants(int32(proc.Pid), p.log)
+		pid := proc.Pid
+		if pid > math.MaxInt32 || pid < math.MinInt32 { // int32 range
+			p.log.Warn("process ID out of int32 range, skipping killDescendants", zap.Int("pid", pid))
+		} else {
+			killDescendants(int32(pid), p.log)
+		}
 		if err := proc.Signal(os.Kill); err != nil {
 			p.log.Warn("sending SIGKILL errored", zap.Error(err))
 		}

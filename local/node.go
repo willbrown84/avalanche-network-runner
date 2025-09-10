@@ -9,6 +9,8 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
+
 	"github.com/ava-labs/avalanche-network-runner/api"
 	"github.com/ava-labs/avalanche-network-runner/network/node"
 	"github.com/ava-labs/avalanche-network-runner/network/node/status"
@@ -24,7 +26,6 @@ import (
 	"github.com/ava-labs/avalanchego/upgrade"
 	"github.com/ava-labs/avalanchego/utils"
 	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/math/meter"
 	"github.com/ava-labs/avalanchego/utils/resource"
@@ -113,7 +114,6 @@ func (node *localNode) AttachPeer(ctx context.Context, router router.InboundHand
 		return nil, err
 	}
 	mc, err := message.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -142,7 +142,7 @@ func (node *localNode) AttachPeer(ctx context.Context, router router.InboundHand
 		1,
 	))
 	tls := tlsCert.PrivateKey.(crypto.Signer)
-	bls0, err := bls.NewSigner()
+	bls0, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +177,7 @@ func (node *localNode) AttachPeer(ctx context.Context, router router.InboundHand
 			logging.NoLog{},
 			peerMsgQueueBufferSize,
 		),
+		false,
 	)
 	cctx, cancel := context.WithTimeout(ctx, peerStartWaitTimeout)
 	err = p.AwaitReady(cctx)

@@ -18,6 +18,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ava-labs/avalanchego/utils/crypto/bls/signer/localsigner"
+
 	"github.com/ava-labs/avalanche-network-runner/api"
 	"github.com/ava-labs/avalanche-network-runner/network"
 	"github.com/ava-labs/avalanche-network-runner/network/node"
@@ -30,7 +32,6 @@ import (
 	"github.com/ava-labs/avalanchego/network/peer"
 	"github.com/ava-labs/avalanchego/staking"
 	"github.com/ava-labs/avalanchego/utils/beacon"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
 	"github.com/ava-labs/avalanchego/utils/logging"
 	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/utils/wrappers"
@@ -680,7 +681,7 @@ func (ln *localNetwork) addNode(nodeConfig node.Config) (node.Node, error) {
 				return nil, err
 			}
 		} else {
-			key, err := bls.NewSigner()
+			key, err := localsigner.New()
 			if err != nil {
 				return nil, fmt.Errorf("couldn't generate new signing key: %w", err)
 			}
@@ -851,7 +852,6 @@ func (ln *localNetwork) healthy(ctx context.Context) error {
 			// no health check for paused nodes
 			continue
 		}
-		node := node
 		nodeName := node.GetName()
 		errGr.Go(func() error {
 			// Every [healthCheckFreq], query node for health status.
