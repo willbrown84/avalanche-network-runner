@@ -3,9 +3,9 @@ module github.com/ava-labs/avalanche-network-runner
 go 1.24.7
 
 require (
-	github.com/ava-labs/avalanchego v1.13.3-0.20250701190537-839ace23368a
-	github.com/ava-labs/coreth v0.15.2
-	github.com/ava-labs/libevm v1.13.14-0.3.0.rc.1
+	github.com/ava-labs/avalanchego v1.13.5
+	github.com/ava-labs/coreth v0.15.4-rc.3
+	github.com/ava-labs/libevm v1.13.14-0.3.0.rc.6
 	github.com/ava-labs/subnet-evm v0.7.5
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1
 	github.com/onsi/ginkgo/v2 v2.22.2
@@ -43,7 +43,7 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
-	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
+	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
